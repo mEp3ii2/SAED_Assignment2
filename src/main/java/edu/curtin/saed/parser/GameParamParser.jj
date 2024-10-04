@@ -1,0 +1,125 @@
+PARSER_BEGIN(GameInputParser)
+
+public class GameInputParser {
+    public static void main(String[] args) throws ParseException {
+        GameInputParser parser = new GameInputParser(System.in);
+        parser.InputFile();
+    }
+}
+
+PARSER_END(GameInputParser)
+
+TOKEN: {
+    <SIZE: "size"> |
+    <START: "start"> |
+    <GOAL: "goal"> |
+    <ITEM: "item"> |
+    <OBSTACLE: "obstacle"> |
+    <AT: "at"> |
+    <MESSAGE: "message"> |
+    <REQUIRES: "requires"> |
+    <PLUGIN: "plugin"> |
+    <SCRIPT: "script"> |
+    <LBRACE: "{"> |
+    <RBRACE: "}"> |
+    <EXCLAMATION_BRACE: "!{"> |    
+    <LPAREN: "("> |
+    <RPAREN: ")"> |
+    <COMMA: ","> |
+    <QUOTE: "\""> |
+    <DIGIT: (["0"-"9"])+ > |  
+    <STRING: "\"" (~["\""])* "\"" > 
+}
+
+SKIP: {
+    " " | "\t" | "\n" | "\r"  // Skip whitespace
+}
+void InputFile() :
+{}
+{
+    Declaration() ( ItemDeclaration() | ObstacleDeclaration() | PluginDeclaration() | ScriptDeclaration() )*
+}
+
+void Declaration() :
+{}
+{
+    SizeDeclaration() StartDeclaration() GoalDeclaration()
+}
+
+void SizeDeclaration() :
+{}
+{
+    <SIZE> "(" RowColumn() ")" 
+}
+
+void StartDeclaration() :
+{}
+{
+    <START> "(" RowColumn() ")" 
+}
+
+void GoalDeclaration() :
+{}
+{
+    <GOAL> "(" RowColumn() ")" 
+}
+
+void RowColumn() :
+{}
+{
+    <DIGIT> "," <DIGIT>
+}
+
+void ItemDeclaration() :
+{}
+{
+    <ITEM> <STRING> <LBRACE> AtDeclaration() MessageDeclaration() <RBRACE>
+}
+
+void ObstacleDeclaration() :
+{}
+{
+    <OBSTACLE> <LBRACE> AtDeclaration() RequiresDeclaration() <RBRACE>
+}
+
+void PluginDeclaration() :
+{}
+{
+    <PLUGIN> JavaClass()
+}
+
+void ScriptDeclaration() :
+{}
+{
+    <SCRIPT> "!{" ScriptCode() "}"
+}
+
+void AtDeclaration() :
+{}
+{
+    <AT> "(" RowColumn() ")" ( "," "(" RowColumn() ")" )*
+}
+
+void MessageDeclaration() :
+{}
+{
+    <MESSAGE> <STRING>
+}
+
+void RequiresDeclaration() :
+{}
+{
+    <REQUIRES> <STRING> ( "," <STRING> )*
+}
+
+void JavaClass() :
+{}
+{
+    (<["a"-"z","A"-"Z"]>)+ ("." (<["a"-"z","A"-"Z"]>)+)*
+}
+
+void ScriptCode() :
+{}
+{
+    <SCRIPT> <EXCLAMATION_BRACE> <STRING> <RBRACE>
+}
