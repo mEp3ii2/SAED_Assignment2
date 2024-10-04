@@ -2,6 +2,10 @@ package edu.curtin.saed.assignment1;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.text.ParseException;
+
 import javax.swing.*;
 
 
@@ -22,14 +26,23 @@ import javax.swing.*;
  */
 public class App
 {
-    public static void main(String[] args) 
+    public static void main(String[] args) throws ParseException
     {
-        SwingUtilities.invokeLater(App::start);  // Equivalent to JavaFX's Platform.runLater().
+        if(args.length < 1){
+            System.out.println("Please provide an input file as a command line arg");
+            System.exit(1);
+        }else if(args.length >1){
+            System.out.println("Please only provide one command line arg");
+            System.exit(1);
+        }
+        String fileName = args[0];
+        SwingUtilities.invokeLater(()->start(fileName));  // Equivalent to JavaFX's Platform.runLater().
+
     }
 
-    public static void start()
+    public static void start(String fileName)
     {
-        var window = new JFrame("Air Traffic Simulator");
+        var window = new JFrame("Maze Game");
 
         // Set up the main "top-down" display area. This is an example only, and you should
         // change this to set it up as you require.
@@ -37,34 +50,6 @@ public class App
         GridArea area = new GridArea(10, 10);
         // area.setGridLines(false); // If desired
         area.setBackground(new Color(0, 0x60, 0));
-
-        area.getIcons().add(new GridAreaIcon(
-            1, // x
-            1, // y
-            0.0, // degrees rotation (clockwise)
-            1.0, // scale
-            App.class.getClassLoader().getResource("airport.png"), // URL for image resource
-            "Airport 1")); // caption
-
-        area.getIcons().add(new GridAreaIcon(
-            5, 3, 45.0, 1.0,
-            App.class.getClassLoader().getResource("plane.png"),
-            "Plane 1"));
-
-
-        // Set up other key parts of the user interface. You'll also want to adjust this.
-
-        var startBtn = new JButton("Start");
-        var endBtn = new JButton("End");
-
-        startBtn.addActionListener((event) ->
-        {
-            System.out.println("Start button pressed");
-        });
-        endBtn.addActionListener((event) ->
-        {
-            System.out.println("End button pressed");
-        });
 
         window.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         window.addWindowListener(new WindowAdapter()
@@ -75,35 +60,29 @@ public class App
                 System.out.println("Window closed");
             }
         });
-
-        var statusText = new JLabel("Label Text");
-        var textArea = new JTextArea();
-        textArea.append("Sidebar\n");
-        textArea.append("Text\n");
-
-
         // Below is basically just the GUI "plumbing" (connecting things together).
 
-        var toolbar = new JToolBar();
-        toolbar.add(startBtn);
-        toolbar.add(endBtn);
-        toolbar.addSeparator();
-        toolbar.add(statusText);
-
-        var scrollingTextArea = new JScrollPane(textArea);
-        scrollingTextArea.setBorder(BorderFactory.createEtchedBorder());
-
-        var splitPane = new JSplitPane(
-            JSplitPane.HORIZONTAL_SPLIT, area, scrollingTextArea);
-
+       
         Container contentPane = window.getContentPane();
         contentPane.setLayout(new BorderLayout());
-        contentPane.add(toolbar, BorderLayout.NORTH);
-        contentPane.add(splitPane, BorderLayout.CENTER);
-
+        contentPane.add(area, BorderLayout.CENTER); // Add GridArea directly to the center
+    
         window.setPreferredSize(new Dimension(1200, 1000));
         window.pack();
-        splitPane.setDividerLocation(0.75);
         window.setVisible(true);
+
+        //parse file
+
+        /*try{
+            FileInputStream inputFile = new FileInputStream(fileName);
+            GameFileParser parser = new GameFileParser(fileName);
+            parser.InputFile();
+            System.out.println("Completed file parsing");
+        }catch(FileNotFoundException e){
+            System.out.println("Input file not found "+e.getMessage());
+        }catch(ParseException e){
+            System.out.println();
+            System.out.println("Error parsing file: "+e.getMessage());
+        }*/
     }
 }
