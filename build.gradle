@@ -1,0 +1,35 @@
+plugins {
+    id 'pmd'
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'java-library'
+
+    compileJava {
+        options.compilerArgs << "-Xlint:all,-serial"
+    }
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.9.2'
+    }
+
+    pmd {
+        consoleOutput = true
+        toolVersion = '6.55.0'
+        ruleSets = []
+        ruleSetFiles = files('saed-pmd-rules.xml')
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+        testLogging.showStandardStreams = true
+    }
+}

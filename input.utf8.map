@@ -1,0 +1,27 @@
+size (10,10)
+start (1,5)
+goal (9,8)
+item "Wooden Sword" {
+    at (0,0), (10,5), (7,1)
+    message "Use wisely."
+}
+
+item "Map" {
+    at (1,2)
+    message "Reveals All."
+}
+
+obstacle {
+    at (1,1), (2,3), (3,4), (4,5)
+    requires "Wooden Sword", "Toffee Apple", "Neil deGrasse Tyson"
+}
+
+plugin "edu.curtin.gameplugins.Teleport"
+plugin "edu.curtin.gameplugins.Penalty"
+plugin "edu.curtin.gameplugins.Reveal"
+
+script !{
+class PrizeCallBack(edu.curtin.game.Callback):
+    def handlePrize(e):
+        print("Hello World")
+}

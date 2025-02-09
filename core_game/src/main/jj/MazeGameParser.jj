@@ -1,0 +1,247 @@
+options {
+    STATIC = true;
+}
+
+PARSER_BEGIN(MazeGameParser)
+
+
+package edu.curtin.maze_game.dsl;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.io.*;
+
+import edu.curtin.maze_game.lib.Obstacle;
+import edu.curtin.maze_game.lib.GameItem;
+import edu.curtin.maze_game.lib.Goal;
+import edu.curtin.maze_game.lib.Cord;
+import edu.curtin.maze_game.lib.GameEntityFactory;
+import edu.curtin.maze_game.lib.Tuple;
+
+
+public class MazeGameParser {
+    
+    
+    private Map<Cord, Tuple<String,String>> itemDeets= new HashMap<Cord, Tuple<String,String>>(); //im so sorry
+    private Map<Cord, String> obstacleDeets = new HashMap<Cord,String>();
+    private List<String> plugins = new ArrayList<String>();
+    private List<String> scripts = new ArrayList<String>();
+    private int[] size = new int[2];
+    private int[] goal = new int[2];
+    private int[] start = new int[2];
+
+    public Map<Cord, Tuple<String, String>> getItemDetails() {
+        return itemDeets;
+    }
+
+    public Map<Cord,String> getObstacleDetails(){
+        return obstacleDeets;
+    }
+
+    public List<String> getPlugins() {
+        return plugins;
+    }
+
+    public List<String> getScripts() {
+        return scripts;
+    }
+
+    public int[] getGoal() {
+        return goal;
+    }
+
+    public int[] getStartPosition() {
+        return start;
+    }
+
+    public int[] getSize(){
+        return size;
+    }
+    
+
+    public static int[] extractCoordinates(String coordinates) {
+        String[] parts = coordinates.split(",");
+        int x = Integer.parseInt(parts[0].trim());
+        int y = Integer.parseInt(parts[1].trim());
+        return new int[]{x, y};
+    }
+
+    public static MazeGameParser parse(String filename, String encoding) throws IOException, ParseException {
+        MazeGameParser mp = new MazeGameParser(new FileInputStream(filename), encoding);
+        parseGridSize(mp.size);
+       
+        parseGame(mp.size,mp.goal,mp.start, mp.itemDeets, mp.obstacleDeets, mp.plugins, mp.scripts);
+        return mp;
+    }
+
+}
+
+
+PARSER_END(MazeGameParser)
+
+SKIP : {
+    " " | "\t" | "\n" | "\r"
+}
+
+TOKEN : {
+    < SIZE: "size" >
+  | < START: "start" >
+  | < GOAL: "goal" >
+  | < DIGIT: ["0"-"9"] >
+  | < COORDINATES: (<DIGIT>)+ "," (<DIGIT>)+ >
+  | < ITEM: "item" >
+  | < OBSTACLE: "obstacle" >
+  | < PLUGIN: "plugin" >
+  | < SCRIPT: "script" >
+  | < AT: "at" >
+  | < REQUIRES: "requires" >
+  | < MESSAGE: "message" >
+  | < QUOTED_STRING: "\"" (~["\""])* "\"" >
+  | < NUMBER: (["0"-"9"])+ >
+  | < COMMA: "," >
+  | < LPAREN: "(" >
+  | < RPAREN: ")" >
+  | < LBRACE: "{" >
+  | < RBRACE: "}" >
+  | < SCRIPT_BODY : "!{" (~["}"])* "}" >
+}
+
+void parseGridSize(int[] size):
+{
+    Token sizeToken;
+}
+{
+    <SIZE> "(" sizeToken = parseCoordinates() ")" {
+        int[] sizeValues = MazeGameParser.extractCoordinates(sizeToken.image);
+        size[0] = sizeValues[0];
+        size[1] = sizeValues[1];
+    }
+}
+
+void parseGame(int[] size, int[] goal, int[] start, Map<Cord, Tuple<String, String>> itemDeets,Map<Cord, String> obstacleDeets, List<String> plugins, List<String> scripts) :
+{
+    Token goalToken;
+    Token startToken;
+    Token pluginToken;
+    Token scriptToken;
+} 
+{
+    (
+        (
+            <START> "(" startToken = parseCoordinates() ")" {
+                int[] startValues = MazeGameParser.extractCoordinates(startToken.image);
+                start[0] = startValues[0];
+                start[1] = startValues[1];
+            }
+        |
+            <GOAL> "(" goalToken = parseCoordinates() ")" {
+                int[] goalValues = MazeGameParser.extractCoordinates(goalToken.image);
+                goal[0] = goalValues[0];
+                goal[1] = goalValues[1];
+            }
+        |
+            parseItems(itemDeets)
+        |
+            parseObstacles(obstacleDeets)
+        |
+            <PLUGIN> pluginToken = <QUOTED_STRING> {
+                plugins.add(pluginToken.image.substring(1, pluginToken.image.length() - 1)); // remove quotes
+            }
+        |
+            <SCRIPT> scriptToken = <SCRIPT_BODY> {
+                String script = scriptToken.image.substring(2, scriptToken.image.length() - 1);
+                scripts.add(script);
+            } 
+        )
+    )*
+    <EOF>
+}
+
+
+Token parseCoordinates() :
+{
+    Token coordinates;
+}
+{
+    coordinates = <COORDINATES> { return coordinates; }
+}
+
+void parseItems(Map<Cord, Tuple<String, String>> itemDeets): {
+    Token itemName;
+    Token coordToken;
+    Token messageToken;
+    List<Cord> itemPositions = new ArrayList<Cord>();
+    String message ="";
+    int[] coords;
+    Tuple<String,String> nameDescStr;
+}
+{
+    <ITEM> itemName = <QUOTED_STRING> <LBRACE>
+    <AT>
+    "(" coordToken = parseCoordinates() ")" {
+        coords = MazeGameParser.extractCoordinates(coordToken.image);
+        itemPositions.add(new Cord(coords[0], coords[1]));
+    }
+    ("," "(" coordToken = parseCoordinates() ")" {
+        coords = MazeGameParser.extractCoordinates(coordToken.image);
+        itemPositions.add(new Cord(coords[0], coords[1]));
+    })*
+    <MESSAGE> messageToken = <QUOTED_STRING> {
+        message = messageToken.image.substring(1, messageToken.image.length() -1);
+ 
+
+
+    }
+    <RBRACE>
+    {
+        String itemNameStr = itemName.image.substring(1, itemName.image.length() - 1);
+        for (Cord position : itemPositions) {
+            // Create the tuple with the name and message, and add to the map
+            Tuple<String, String> nameDesc = new Tuple<String,String>(itemNameStr, message);
+            itemDeets.put(position, nameDesc);
+        }
+    }
+}
+
+void parseObstacles(Map<Cord, String> obstacleDeets) : {
+    Token coordToken;
+    Token itemNameToken;
+    List<Cord> obstaclePositions = new ArrayList<Cord>();
+    List<String> requiresList = new ArrayList<String>();
+    int[] coords;
+}
+{
+    <OBSTACLE> <LBRACE> 
+    <AT>
+    "(" coordToken = parseCoordinates() ")" {
+        coords = MazeGameParser.extractCoordinates(coordToken.image);
+        obstaclePositions.add(new Cord(coords[0], coords[1]));
+    }
+    ("," "(" coordToken = parseCoordinates() ")" {
+        coords = MazeGameParser.extractCoordinates(coordToken.image);
+        obstaclePositions.add(new Cord(coords[0], coords[1]));
+    })*
+    
+    <REQUIRES>
+    itemNameToken = <QUOTED_STRING> {
+        requiresList.add(itemNameToken.image.substring(1, itemNameToken.image.length() - 1)); 
+    }
+    ("," itemNameToken = <QUOTED_STRING> {
+        requiresList.add(itemNameToken.image.substring(1, itemNameToken.image.length() - 1));
+    })*
+    <RBRACE>
+    
+    {
+        // Make sure we assign only if positions and requirements align
+        int limit = Math.min(obstaclePositions.size(), requiresList.size());
+        for (int i = 0; i < limit; i++) {
+            obstacleDeets.put(obstaclePositions.get(i), requiresList.get(i));
+        }
+        // Clear lists for next obstacle block
+        obstaclePositions.clear();
+        requiresList.clear();
+    }
+}
+

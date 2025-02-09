@@ -1,0 +1,21 @@
+SAED ASSIGNMENT 2
+19126924 Mitchell Pontague
+
+# Locale
+will give you drop box of all options
+
+eng au: select English (Australia)
+eng us: select English (United States)
+fil filipino: select Filipino (Philippines)
+
+selecting any other option will give prompt saying not implemented yet 
+
+
+# Parsing 
+Wasn't sure if all three encoding's were meant to be same file, assumed that there should be slight variation for slightly different games
+Scripts not supported yet so put basic python to show that it can at least be read and not break anything
+
+
+# Asssumptions
+
+I assumed that items are consumable and upon use to clear a obstacle they are removed from the players inventory, this conclusion was drawn from the fact the spec list item decleration wooden sword having three instances

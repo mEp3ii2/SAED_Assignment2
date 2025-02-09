@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'pmd'
+    id 'application'
+    id 'ca.coglinc2.javacc' version '3.0.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.python:jython-standalone:2.7.3'
+    implementation project (':lib')
+    implementation project (':api')
+    implementation project (':teleport')
+    implementation project (':penalty')
+    implementation project (':reveal')
+}
+
+compileJava {
+    options.compilerArgs << "-Xlint:all,-serial"
+}
+
+pmd {
+    consoleOutput = true
+    toolVersion = '6.55.0'
+    ruleSets = []
+    ruleSetFiles = files('saed-pmd-rules.xml')
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-Xlint:-cast"]
+}
+
+application {
+    mainClassName = 'edu.curtin.maze_game.core_game.App'
+}
+
+compileJavacc {
+    inputDirectory = file('src/main/jj/')
+    outputDirectory = file(project.buildDir.absolutePath + '/javacc')
+}
